@@ -13,7 +13,7 @@ A web-based quiz application built with HTML, CSS, and JavaScript.
 1. Clone this repository
 2. Open `index.html` in your browser
 3. Select a category and start the quiz!
-4. 
+   
 ## Future Improvements
 - Add more question categories
 - Implement user accounts
