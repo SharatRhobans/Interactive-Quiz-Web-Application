@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz</title>
+    <style>
+        /* CSS Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .quiz-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .option:hover {
+            background-color: #ddd;
+        }
+
+        .option.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .timer {
+            font-size: 18px;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <!-- Start Screen -->
+        <div id="start-screen" class="start-screen fade-in">
+            <h1>Welcome to the Quiz Challenge!</h1>
+            <p>Test your knowledge with this interactive quiz</p>
+            <div class="categories">
+                <h3>Select Category:</h3>
+                <select id="category-select" class="category-select">
+                    <option value="general">General Knowledge</option>
+                    <option value="science">Science</option>
+                    <option value="history">History</option>
+                </select>
+            </div>
+            <button id="start-btn" class="btn">Start Quiz</button>
+        </div>
+        
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="quiz-screen hidden">
+            <div class="quiz-header">
+                <span id="question-counter">Question 1/10</span>
+                <span id="score">Score: 0</span>
+            </div>
+            
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            
+            <div id="timer" class="timer">Time left: 15s</div>
+            
+            <div id="question" class="question">Question text goes here</div>
+            
+            <div id="options" class="options">
+                <!-- Options will be added by JavaScript -->
+            </div>
+            
+            <button id="next-btn" class="btn hidden">Next Question</button>
+        </div>
+        
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen hidden">
+            <h2>Quiz Completed!</h2>
+            <p>Your final score is <span id="final-score">0</span>/<span id="total-questions">0</span></p>
+            <p id="result-message"></p>
+            <div class="high-scores">
+                <h3>High Scores</h3>
+                <ol id="high-scores-list"></ol>
+            </div>
+            <button id="restart-btn" class="btn">Restart Quiz</button>
+        </div>
+    </div>
+    
+    <script>
+        // Quiz questions database
+        const questionsDatabase = {
+            general: [
+                {
+                    question: "What is the capital of France?",
+                    options: ["London", "Paris", "Berlin", "Madrid"],
+                    answer: 1
+                },
+                {
+                    question: "Which language runs in a web browser?",
+                    options: ["Java", "C", "Python", "JavaScript"],
+                    answer: 3
+                },
+                {
+                    question: "What does HTML stand for?",
+                    options: [
+                        "Hyper Text Markup Language",
+                        "Hyperlinks and Text Markup Language",
+                        "Home Tool Markup Language",
+                        "Hyper Text Makeup Language"
+                    ],
+                    answer: 0
+                },
+                {
+                    question: "Which year was JavaScript launched?",
+                    options: ["1995", "1998", "2000", "2005"],
+                    answer: 0
+                },
+                {
+                    question: "What does CSS stand for?",
+                    options: [
+                        "Computer Style Sheets",
+                        "Creative Style Sheets",
+                        "Cascading Style Sheets",
+                        "Colorful Style Sheets"
+                    ],
+                    answer: 2
+                }
+            ],
+            science: [
+                {
+                    question: "What is the chemical symbol for water?",
+                    options: ["H2O", "CO2", "NaCl", "O2"],
+                    answer: 0
+                },
+                {
+                    question: "Which planet is known as the Red Planet?",
+                    options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                    answer: 1
+                },
+                {
+                    question: "What is the hardest natural substance on Earth?",
+                    options: ["Gold", "Iron", "Diamond", "Quartz"],
+                    answer: 2
+                },
+                {
+                    question: "Which gas do plants absorb from the atmosphere?",
+                    options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+                    answer: 2
+                },
+                {
+                    question: "What is the largest organ in the human body?",
+                    options: ["Liver", "Brain", "Skin", "Heart"],
+                    answer: 2
+                }
+            ],
+            history: [
+                {
+                    question: "In which year did World War II end?",
+                    options: ["1943", "1945", "1947", "1950"],
+                    answer: 1
+                },
+                {
+                    question: "Who was the first President of the United States?",
+                    options: [
+                        "Thomas Jefferson",
+                        "George Washington",
+                        "Abraham Lincoln",
+                        "John Adams"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "The Great Wall of China was built primarily to protect against invasions from which group?",
+                    options: ["Mongols", "Japanese", "Koreans", "Vietnamese"],
+                    answer: 0
+                },
+                {
+                    question: "Which ancient civilization built the pyramids?",
+                    options: ["Greeks", "Romans", "Egyptians", "Mayans"],
+                    answer: 2
+                },
+                {
+                    question: "The Industrial Revolution began in which country?",
+                    options: ["France", "Germany", "United States", "Great Britain"],
+                    answer: 3
+                }
+            ]
+        };
+
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const questionCounter = document.getElementById('question-counter');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('final-score');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const resultMessageElement = document.getElementById('result-message');
+        const highScoresList = document.getElementById('high-scores-list');
+        const categorySelect = document.getElementById('category-select');
+        const progressBar = document.getElementById('progress-bar');
+        const timerElement = document.getElementById('timer');
+
+        // Quiz variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+        let questions = [];
+        let timer;
+        let timeLeft = 15;
+        let highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+
+        // Initialize the quiz
+        function init() {
+            startBtn.addEventListener('click', startQuiz);
+            nextBtn.addEventListener('click', nextQuestion);
+            restartBtn.addEventListener('click', restartQuiz);
+        }
+
+        // Start quiz
+        function startQuiz() {
+            const selectedCategory = categorySelect.value;
+            questions = [...questionsDatabase[selectedCategory]];
+            
+            // Shuffle questions
+            questions = shuffleArray(questions);
+            
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreElement.textContent = `Score: ${score}`;
+            totalQuestionsElement.textContent = questions.length;
+            
+            showQuestion();
+        }
+
+        // Shuffle array function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Display question
+        function showQuestion() {
+            resetTimer();
+            startTimer();
+            
+            const question = questions[currentQuestionIndex];
+            questionElement.textContent = question.question;
+            
+            // Clear previous options
+            optionsElement.innerHTML = '';
+            
+            // Add new options
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+                optionElement.textContent = option;
+                optionElement.dataset.index = index;
+                optionElement.addEventListener('click', selectOption);
+                optionsElement.appendChild(optionElement);
+            });
+            
+            // Update counter
+            questionCounter.textContent = `Question ${currentQuestionIndex + 1}/${questions.length}`;
+            
+            // Update progress bar
+            progressBar.style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+            
+            // Hide next button until an option is selected
+            nextBtn.classList.add('hidden');
+        }
+
+        // Select option
+        function selectOption(e) {
+            // Remove selected class from all options
+            document.querySelectorAll('.option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            e.target.classList.add('selected');
+            selectedOption = parseInt(e.target.dataset.index);
+            
+            // Show next button
+            nextBtn.classList.remove('hidden');
+            
+            // Stop timer when answer is selected
+            clearInterval(timer);
+        }
+
+        // Timer functions
+        function startTimer() {
+            timeLeft = 15;
+            updateTimerDisplay();
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timeUp();
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            timeLeft = 15;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            timerElement.textContent = `Time left: ${timeLeft}s`;
+            
+            // Change color when time is running out
+            if (timeLeft <= 5) {
+                timerElement.style.color = 'red';
+            } else {
+                timerElement.style.color = '#333';
+            }
+        }
+
+        function timeUp() {
+            // Mark all options as disabled
+            document.querySelectorAll('.option').forEach(option => {
+                option.style.pointerEvents = 'none';
+            });
+            
+            // Automatically move to next question after a delay
+            setTimeout(() => {
+                nextQuestion();
+            }, 1000);
+        }
+
+        // Next question
+        function nextQuestion() {
+            // Check if answer is correct (if an option was selected)
+            if (selectedOption !== null) {
+                const correctAnswer = questions[currentQuestionIndex].answer;
+                const options = document.querySelectorAll('.option');
+                
+                // Highlight correct and incorrect answers
+                options.forEach((option, index) => {
+                    option.style.pointerEvents = 'none'; // Disable further clicks
+                    
+                    if (index === correctAnswer) {
+                        option.classList.add('correct');
+                    } else if (index === selectedOption && selectedOption !== correctAnswer) {
+                        option.classList.add('incorrect');
+                    }
+                });
+                
+                // Update score if correct
+                if (selectedOption === correctAnswer) {
+                    score++;
+                    scoreElement.textContent = `Score: ${score}`;
+                }
+                
+                // Wait a moment before moving to next question
+                setTimeout(() => {
+                    // Move to next question or end quiz
+                    currentQuestionIndex++;
+                    selectedOption = null;
+                    
+                    if (currentQuestionIndex < questions.length) {
+                        showQuestion();
+                    } else {
+                        endQuiz();
+                    }
+                }, 1500);
+            } else {
+                // No answer selected, just move to next question
+                currentQuestionIndex++;
+                
+                if (currentQuestionIndex < questions.length) {
+                    showQuestion();
+                } else {
+                    endQuiz();
+                }
+            }
+        }
+
+        // End quiz
+        function endQuiz() {
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            finalScoreElement.textContent = score;
+            totalQuestionsElement.textContent = questions.length;
+            
+            // Set result message based on score
+            const percentage = (score / questions.length) * 100;
+            let message = '';
+            
+            if (percentage >= 80) {
+                message = "Excellent! You're a quiz master!";
+            } else if (percentage >= 60) {
+                message = "Good job! You know your stuff!";
+            } else if (percentage >= 40) {
+                message = "Not bad! Keep learning!";
+            } else {
+                message = "Keep practicing! You'll get better!";
+            }
+            
+            resultMessageElement.textContent = message;
+            
+            // Update high scores
+            updateHighScores(score, questions.length);
+        }
+
+        // Update high scores
+        function updateHighScores(score, total) {
+            const percentage = (score / total) * 100;
+            const date = new Date().toLocaleDateString();
+            
+            highScores.push({
+                score: score,
+                total: total,
+                percentage: percentage,
+                date: date
+            });
+            
+            // Sort high scores by percentage (descending)
+            highScores.sort((a, b) => b.percentage - a.percentage);
+            
+            // Keep only top 5 scores
+            highScores = highScores.slice(0, 5);
+            
+            // Save to localStorage
+            localStorage.setItem('highScores', JSON.stringify(highScores));
+            
+            // Display high scores
+            displayHighScores();
+        }
+
+        // Display high scores
+        function displayHighScores() {
+            highScoresList.innerHTML = '';
+            
+            highScores.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${item.score}/${item.total} (${Math.round(item.percentage)}%) - ${item.date}`;
+                highScoresList.appendChild(li);
+            });
+        }
+
+        // Restart quiz
+        function restartQuiz() {
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+
+        // Initialize the quiz when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
